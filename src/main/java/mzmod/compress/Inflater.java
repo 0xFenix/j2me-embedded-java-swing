@@ -32,11 +32,12 @@ public final class Inflater {
    private int repeatCount;
    private int repeatSymbol;
    private int codeLengthIndex;
+   private int codeLengthState;
    private byte lastCodeLength;
    private byte[] codeLengthBuffer;
+   private byte[] symbolCodeLengths;
    private int bitBuffer = 0;
    private int bitCount = 0;
-   private int bytesRead = 0;
 
    public Inflater() {
       this.inflateState = this.hasHeader ? 2 : 0;
@@ -161,7 +162,7 @@ public final class Inflater {
                      this.inflateState = 5;
                   case 5:
                      var9 = this.storedBlockLength;
-                     var9 = Math.min(Math.min(var9, 32768 - this.windowUsed), (var6 = this).bitCount - var6.bitBuffer + (var6.bytesRead >> 3));
+                     var9 = Math.min(Math.min(var9, 32768 - this.windowUsed), (var6 = this).inputWritePos - var6.inputReadPos + (var6.bitCount >> 3));
                      var11 = 32768 - this.windowWritePos;
                      if (var9 > var11) {
                         if ((var10 = this.copyRawBytes(this.slidingWindow, this.windowWritePos, var11)) == var11) {
@@ -178,7 +179,7 @@ public final class Inflater {
                         this.inflateState = 2;
                         var10000 = true;
                      } else {
-                        var10000 = this.bitBuffer != this.bitCount;
+                        var10000 = this.inputReadPos != this.inputWritePos;
                      }
                      continue;
                   case 6:
@@ -189,7 +190,7 @@ public final class Inflater {
                         label339: {
                            label292:
                            while(true) {
-                              switch (var14.codeLengthIndex) {
+                              switch (var14.codeLengthState) {
                                  case 0:
                                     var14.numLiterals = var14.peekBits(5);
                                     if (var14.numLiterals < 0) {
@@ -198,8 +199,8 @@ public final class Inflater {
                                     }
 
                                     var14.numLiterals += 257;
-                                    var14.skipBits(5);
-                                    var14.codeLengthIndex = 1;
+var14.skipBits(5);
+                                     var14.codeLengthState = 1;
                                  case 1:
                                     var14.numDistances = var14.peekBits(5);
                                     if (var14.numDistances < 0) {
@@ -209,9 +210,9 @@ public final class Inflater {
 
                                     ++var14.numDistances;
                                     var14.skipBits(5);
-                                    var14.totalCodeLengthSymbols = var14.numLiterals + var14.numDistances;
-                                    var14.codeLengthBuffer = new byte[var14.totalCodeLengthSymbols];
-                                    var14.codeLengthIndex = 2;
+var14.totalCodeLengthSymbols = var14.numLiterals + var14.numDistances;
+                                     var14.symbolCodeLengths = new byte[var14.totalCodeLengthSymbols];
+                                     var14.codeLengthState = 2;
                                  case 2:
                                     var14.numCodeLengths = var14.peekBits(4);
                                     if (var14.numCodeLengths < 0) {
@@ -220,9 +221,9 @@ public final class Inflater {
                                     }
 
                                     var14.numCodeLengths += 4;
-                                    var14.skipBits(4);
-                                    var14.codeLengthBuffer = new byte[19];
-                                    var14.codeLengthIndex = 3;
+var14.skipBits(4);
+                                     var14.codeLengthBuffer = new byte[19];
+                                     var14.codeLengthState = 3;
                                  case 3:
                                     break;
                                  case 4:
@@ -244,15 +245,16 @@ public final class Inflater {
                                  ++var14.codeLengthIndex;
                               }
 
-                           var14.codeLengthDecoder = new HuffmanDecoder(var14.codeLengthBuffer, 19);
+var14.codeLengthDecoder = new HuffmanDecoder(var14.codeLengthBuffer, 19);
                            var14.codeLengthBuffer = null;
-                              var14.codeLengthIndex = 4;
+                               var14.codeLengthState = 4;
+                               var14.codeLengthIndex = 0;
                               break;
                            }
 
-                           while(((var9 = var14.codeLengthDecoder.decodeSymbol(var14)) & -16) == 0) {
-                              var14.codeLengthBuffer[var14.codeLengthIndex++] = var14.lastCodeLength = (byte)var9;
-                              if (var14.codeLengthIndex == var14.totalCodeLengthSymbols) {
+while(((var9 = var14.codeLengthDecoder.decodeSymbol(var14)) & -16) == 0) {
+                               var14.symbolCodeLengths[var14.codeLengthIndex++] = var14.lastCodeLength = (byte)var9;
+                               if (var14.codeLengthIndex == var14.totalCodeLengthSymbols) {
                                  var10000 = true;
                                  break label301;
                               }
@@ -267,8 +269,8 @@ public final class Inflater {
                               var14.lastCodeLength = 0;
                            }
 
-                           var14.repeatSymbol = var9 - 16;
-                           var14.codeLengthIndex = 5;
+var14.repeatSymbol = var9 - 16;
+                            var14.codeLengthState = 5;
                         }
 
                         var9 = var14.repeatSymbol > 1 ? 7 : var14.repeatSymbol + 2;
@@ -279,15 +281,15 @@ public final class Inflater {
 
                         var14.skipBits(var9);
 
-                        for(var10 += var14.repeatSymbol > 1 ? 11 : 3; var10-- > 0; var14.codeLengthBuffer[var14.codeLengthIndex++] = var14.lastCodeLength) {
+                        for(var10 += var14.repeatSymbol > 1 ? 11 : 3; var10-- > 0; var14.symbolCodeLengths[var14.codeLengthIndex++] = var14.lastCodeLength) {
                         }
 
-                        if (var14.codeLengthIndex == var14.totalCodeLengthSymbols) {
-                           var10000 = true;
-                           break;
+if (var14.codeLengthIndex == var14.totalCodeLengthSymbols) {
+                            var10000 = true;
+                            break;
                         }
 
-                        var14.codeLengthIndex = 4;
+                        var14.codeLengthState = 4;
                      }
 
                      if (!var10000) {
@@ -295,11 +297,11 @@ public final class Inflater {
                      }
 
                      byte[] var15 = new byte[this.numLiterals];
-                     System.arraycopy(this.codeLengthBuffer, 0, var15, 0, this.numLiterals);
+                     System.arraycopy(this.symbolCodeLengths, 0, var15, 0, this.numLiterals);
                      this.literalDecoder = new HuffmanDecoder(var15, this.numLiterals);
                      Inflater var17 = var14 = this;
                      var15 = new byte[var17.numDistances];
-                     System.arraycopy(var14.codeLengthBuffer, var14.numLiterals, var15, 0, var14.numDistances);
+                     System.arraycopy(var14.symbolCodeLengths, var14.numLiterals, var15, 0, var14.numDistances);
                      var17.distanceDecoder = new HuffmanDecoder(var15, var14.numDistances);
                      this.inflateState = 7;
                   case 7:
@@ -441,8 +443,8 @@ public final class Inflater {
 
    public final void reset() {
       this.inflateState = this.hasHeader ? 2 : 0;
-      this.totalBytesIn = this.bytesRead = 0;
-      this.bitBuffer = this.bitCount = this.bitCount = this.bytesRead = 0;
+      this.totalBytesIn = this.inputReadPos = this.inputWritePos = 0;
+      this.bitBuffer = this.bitCount = 0;
       this.windowUsed = this.windowWritePos = 0;
       this.decodeDynamicHeader();
       this.literalDecoder = null;
@@ -452,33 +454,34 @@ public final class Inflater {
 
    public final void setInput(byte[] var1, int var2, int var3) {
       int var4 = var2;
-      this.bitCount = var2 + var3;
+      this.inputWritePos = var2 + var3;
       if ((var3 & 1) != 0) {
          var4 = var2 + 1;
-         this.bitBuffer |= (var1[var2] & 255) << this.bytesRead;
-         this.bytesRead += 8;
+         this.bitBuffer |= (var1[var2] & 255) << this.bitCount;
+         this.bitCount += 8;
       }
 
       this.inputBuffer = var1;
-      this.bitBuffer = var4;
+      this.inputReadPos = var4;
       this.totalBytesIn += var3;
    }
 
    private void decodeDynamicHeader() {
       this.codeLengthBuffer = null;
+      this.symbolCodeLengths = null;
       this.codeLengthDecoder = null;
-      this.codeLengthIndex = this.numLiterals = this.numDistances = this.numCodeLengths = this.totalCodeLengthSymbols = this.repeatCount = this.repeatSymbol = 0;
+      this.codeLengthState = this.codeLengthIndex = this.numLiterals = this.numDistances = this.numCodeLengths = this.totalCodeLengthSymbols = this.repeatCount = this.repeatSymbol = 0;
       this.lastCodeLength = 0;
    }
 
    public final int peekBits(int var1) {
-      if (this.bytesRead < var1) {
-         if (this.bitBuffer == this.bitCount) {
+      if (this.bitCount < var1) {
+         if (this.inputReadPos == this.inputWritePos) {
             return -1;
          }
 
-         this.bitBuffer |= (this.inputBuffer[this.bitBuffer++] & 255 | (this.inputBuffer[this.bitBuffer++] & 255) << 8) << this.bytesRead;
-         this.bytesRead += 16;
+         this.bitBuffer |= (this.inputBuffer[this.inputReadPos++] & 255 | (this.inputBuffer[this.inputReadPos++] & 255) << 8) << this.bitCount;
+         this.bitCount += 16;
       }
 
       return this.bitBuffer & (1 << var1) - 1;
@@ -486,36 +489,36 @@ public final class Inflater {
 
    public final void skipBits(int var1) {
       this.bitBuffer >>>= var1;
-      this.bytesRead -= var1;
+      this.bitCount -= var1;
    }
 
    public final int getAvailableBits() {
-      return this.bytesRead;
+      return this.bitCount;
    }
 
    private void alignToByteBoundary() {
-      this.bitBuffer >>= this.bytesRead & 7;
-      this.bytesRead &= -8;
+      this.bitBuffer >>= this.bitCount & 7;
+      this.bitCount &= -8;
    }
 
    private int copyRawBytes(byte[] var1, int var2, int var3) {
       int var4;
-      for(var4 = 0; this.bytesRead > 0 && var3 > 0; ++var4) {
+      for(var4 = 0; this.bitCount > 0 && var3 > 0; ++var4) {
          var1[var2++] = (byte)this.bitBuffer;
          this.bitBuffer >>>= 8;
-         this.bytesRead -= 8;
+         this.bitCount -= 8;
          --var3;
       }
 
       if (var3 == 0) {
          return var4;
       } else {
-         var3 = Math.min(var3, this.bitCount - this.bitBuffer);
-         System.arraycopy(this.inputBuffer, this.bitBuffer, var1, var2, var3);
-         this.bitBuffer += var3;
-         if ((this.bitBuffer - this.bitCount & 1) != 0) {
-            this.bitBuffer = this.inputBuffer[this.bitBuffer++] & 255;
-            this.bytesRead = 8;
+         var3 = Math.min(var3, this.inputWritePos - this.inputReadPos);
+         System.arraycopy(this.inputBuffer, this.inputReadPos, var1, var2, var3);
+         this.inputReadPos += var3;
+         if ((this.inputReadPos - this.inputWritePos & 1) != 0) {
+            this.bitBuffer = this.inputBuffer[this.inputReadPos++] & 255;
+            this.bitCount = 8;
          }
 
          return var4 + var3;

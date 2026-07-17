@@ -27,9 +27,10 @@ final class JarInfo {
     this.jarPath = jarPath;
   }
 
-  final boolean parseManifest(byte[] var1) {
+  final boolean parseManifest(byte[] zipEntryData) {
     try {
-      this.manifestEntries = parseManifestEntries(var1);
+      System.out.println("Parsing manifest entries..." + new String(zipEntryData));
+      this.manifestEntries = parseManifestEntries(zipEntryData);
       this.displayNames = new String[26];
       this.displayNames[0] = "10";
       String var7;
@@ -40,6 +41,7 @@ final class JarInfo {
       try {
         this.iconPath = var7.substring(var2, var7.indexOf(44, var2)).trim().substring(1);
       } catch (Exception var8) {
+        System.out.println("Error occurred while parsing icon path.");
       }
 
       long var3 = System.currentTimeMillis();
@@ -58,20 +60,24 @@ final class JarInfo {
         this.displayNames[25] = var7;
       }
 
+      System.out.println("Manifest entries parsed successfully.");
+
       return true;
-    } catch (Exception var9) {
+    } catch (Exception err) {
+      System.out.println("Error occurred while parsing manifest entries.");
+      err.printStackTrace();
       return false;
     }
   }
 
   private static Hashtable parseManifestEntries(byte[] var0) {
     Hashtable var1 = new Hashtable();
-    ByteArrayInputStream var6 = new ByteArrayInputStream(var0);
+    ByteArrayInputStream bais = new ByteArrayInputStream(var0);
     String var3 = "";
 
     try {
       String var2;
-      while ((var2 = readLine((InputStream) var6)) != null) {
+      while ((var2 = readLine((InputStream) bais)) != null) {
         int var4;
         if ((var4 = var2.indexOf(58)) > 0) {
           var1.put(var3 = var2.substring(0, var4), var2.substring(var4 + 1).trim());
@@ -80,7 +86,7 @@ final class JarInfo {
         }
       }
 
-      var6.close();
+      bais.close();
     } catch (Exception ignored) {
     }
 

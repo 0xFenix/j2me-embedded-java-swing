@@ -1,5 +1,4 @@
 package mzmod.compress;
-
 public final class Deflater {
    private int compressionLevel;
    private int state;
@@ -14,8 +13,8 @@ public final class Deflater {
    private int lookahead;
    private boolean hasPrevLiteral;
    private int matchLen;
-   private int prevMatchStart;
-   private int prevMatchLen;
+   private int windowPos;
+   private int matchLength;
    private int maxChainLength;
    private int goodMatchLen;
    private int maxLazyMatchLen;
@@ -44,7 +43,7 @@ public final class Deflater {
    private int bitCount;
 
    public Deflater() {
-      this.matchLen = this.prevMatchLen = 1;
+      this.matchLen = this.windowPos = 1;
       this.hasHeader = true;
       this.compressionMode = 0;
       this.setCompressionLevel(0);
@@ -56,10 +55,10 @@ public final class Deflater {
       this.checksum = 0;
       this.outputWritePos = this.outputReadPos = this.bitBuffer = this.bitCount = 0;
       Deflater var1 = this;
-      this.matchLen = this.prevMatchLen = 1;
+      this.matchLen = this.windowPos = 1;
       this.lookahead = 0;
       this.hasPrevLiteral = false;
-      this.prevMatchLen = 2;
+      this.matchLength = 2;
 
       for(int var2 = 32767; var2 >= 0; --var2) {
          var1.hashHead[var2] = 0;
@@ -101,17 +100,17 @@ public final class Deflater {
          if (2 != this.compressionMode) {
             switch (this.compressionMode) {
                case 0:
-                  if (this.prevMatchLen > this.matchLen) {
-                     this.compressStoredBlock(this.window, this.matchLen, this.prevMatchLen - this.matchLen, false);
-                     this.matchLen = this.prevMatchLen;
+                  if (this.windowPos > this.matchLen) {
+                     this.compressStoredBlock(this.window, this.matchLen, this.windowPos - this.matchLen, false);
+                     this.matchLen = this.windowPos;
                   }
 
                   this.updateHash();
                   break;
                case 1:
-                  if (this.prevMatchLen > this.matchLen) {
-                     this.compressDynamicBlock(this.window, this.matchLen, this.prevMatchLen - this.matchLen, false);
-                     this.matchLen = this.prevMatchLen;
+                  if (this.windowPos > this.matchLen) {
+                     this.compressDynamicBlock(this.window, this.matchLen, this.windowPos - this.matchLen, false);
+                     this.matchLen = this.windowPos;
                   }
             }
 
@@ -172,13 +171,13 @@ public final class Deflater {
 
          do {
             Deflater var9 = var5;
-            if (var5.prevMatchLen >= 65274) {
+            if (var5.windowPos >= 65274) {
                var5.slideWindow();
             }
 
             while(var9.lookahead < 262 && var9.inputPos < var9.inputEnd) {
-               int var10 = Math.min(65536 - var9.lookahead - var9.prevMatchLen, var9.inputEnd - var9.inputPos);
-               System.arraycopy(var9.inputBuffer, var9.inputPos, var9.window, var9.prevMatchLen + var9.lookahead, var10);
+               int var10 = Math.min(65536 - var9.lookahead - var9.windowPos, var9.inputEnd - var9.inputPos);
+               System.arraycopy(var9.inputBuffer, var9.inputPos, var9.window, var9.windowPos + var9.lookahead, var10);
                var9.inputPos += var10;
                var9.lookahead += var10;
             }
@@ -198,9 +197,9 @@ public final class Deflater {
                      var10000 = false;
                   } else {
                      label357: {
-                        var5.prevMatchLen += var5.lookahead;
+                        var5.windowPos += var5.lookahead;
                         var5.lookahead = 0;
-                        if ((var11 = var5.prevMatchLen - var5.matchLen) >= 65531 || var5.matchLen < 32768 && var11 >= 32506 || var19) {
+                        if ((var11 = var5.windowPos - var5.matchLen) >= 65531 || var5.matchLen < 32768 && var11 >= 32506 || var19) {
                            var21 = var16;
                            if (var11 > 65531) {
                               var11 = 65531;
@@ -230,42 +229,42 @@ public final class Deflater {
                      label340: {
                         while(var9.lookahead >= 262 || var20) {
                            if (var9.lookahead == 0) {
-                              var9.compressDynamicBlock(var9.window, var9.matchLen, var9.prevMatchLen - var9.matchLen, var16);
-                              var9.matchLen = var9.prevMatchLen;
+                              var9.compressDynamicBlock(var9.window, var9.matchLen, var9.windowPos - var9.matchLen, var16);
+                              var9.matchLen = var9.windowPos;
                               var10000 = false;
                               break label340;
                            }
 
-                           if (var9.prevMatchLen > 65274) {
+                           if (var9.windowPos > 65274) {
                               var9.slideWindow();
                            }
 
-                           if (var9.lookahead >= 3 && (var11 = var9.findLongestMatch()) != 0 && var9.prevMatchLen - var11 <= 32506 && var9.matchFound(var11)) {
-                              var9.emitMatch(var9.prevMatchLen - var9.matchStart, var9.prevMatchLen);
-                              var9.lookahead -= var9.prevMatchLen;
-                              if (var9.prevMatchLen <= var9.maxLazyMatchLen && var9.lookahead >= 3) {
-                                 while(--var9.prevMatchLen > 0) {
-                                    ++var9.prevMatchLen;
+                           if (var9.lookahead >= 3 && (var11 = var9.findLongestMatch()) != 0 && var9.windowPos - var11 <= 32506 && var9.matchFound(var11)) {
+                              var9.emitMatch(var9.windowPos - var9.matchStart, var9.matchLength);
+                              var9.lookahead -= var9.matchLength;
+                              if (var9.matchLength <= var9.maxLazyMatchLen && var9.lookahead >= 3) {
+                                 while(--var9.matchLength > 0) {
+                                    ++var9.windowPos;
                                     var9.findLongestMatch();
                                  }
 
-                                 ++var9.prevMatchLen;
+                                 ++var9.windowPos;
                               } else {
-                                 var9.prevMatchLen += var9.prevMatchLen;
+                                 var9.windowPos += var9.matchLength;
                                  if (var9.lookahead >= 2) {
                                     var9.updateHash();
                                  }
                               }
 
-                              var9.prevMatchLen = 2;
+                              var9.matchLength = 2;
                            } else {
-                              var9.emitLiteral(var9.window[var9.prevMatchLen] & 255);
-                              ++var9.prevMatchLen;
+                              var9.emitLiteral(var9.window[var9.windowPos] & 255);
+                              ++var9.windowPos;
                               --var9.lookahead;
                               if (var9.isBlockFull()) {
                                  var21 = var16 && var9.lookahead == 0;
-                                 var9.compressDynamicBlock(var9.window, var9.matchLen, var9.prevMatchLen - var9.matchLen, var21);
-                                 var9.matchLen = var9.prevMatchLen;
+                                 var9.compressDynamicBlock(var9.window, var9.matchLen, var9.windowPos - var9.matchLen, var21);
+                                 var9.matchLen = var9.windowPos;
                                  if (var21) {
                                     var10000 = false;
                                     break label340;
@@ -291,33 +290,33 @@ public final class Deflater {
                         while(var9.lookahead >= 262 || var20) {
                            if (var9.lookahead == 0) {
                               if (var9.hasPrevLiteral) {
-                                 var9.emitLiteral(var9.window[var9.prevMatchLen - 1] & 255);
+                                 var9.emitLiteral(var9.window[var9.windowPos - 1] & 255);
                               }
 
                               var9.hasPrevLiteral = false;
-                              var9.compressDynamicBlock(var9.window, var9.matchLen, var9.prevMatchLen - var9.matchLen, var16);
-                              var9.matchLen = var9.prevMatchLen;
+                              var9.compressDynamicBlock(var9.window, var9.matchLen, var9.windowPos - var9.matchLen, var16);
+                              var9.matchLen = var9.windowPos;
                               var10000 = false;
                               break label343;
                            }
 
-                           if (var9.prevMatchLen >= 65274) {
+                           if (var9.windowPos >= 65274) {
                               var9.slideWindow();
                            }
 
                            var11 = var9.matchStart;
-                           int var12 = var9.prevMatchLen;
+                           int var12 = var9.matchLength;
                            int var13;
-                           if (var9.lookahead >= 3 && (var13 = var9.findLongestMatch()) != 0 && var9.prevMatchLen - var13 <= 32506 && var9.matchFound(var13) && var9.prevMatchLen <= 5 && var9.prevMatchLen == 3 && var9.prevMatchLen - var9.matchStart > 4096) {
-                              var9.prevMatchLen = 2;
+                           if (var9.lookahead >= 3 && (var13 = var9.findLongestMatch()) != 0 && var9.windowPos - var13 <= 32506 && var9.matchFound(var13) && var9.matchLength <= 5 && var9.matchLength == 3 && var9.windowPos - var9.matchStart > 4096) {
+                              var9.matchLength = 2;
                            }
 
-                           if (var12 >= 3 && var9.prevMatchLen <= var12) {
-                              var9.emitMatch(var9.prevMatchLen - 1 - var11, var12);
+                           if (var12 >= 3 && var9.matchLength <= var12) {
+                              var9.emitMatch(var9.windowPos - 1 - var11, var12);
                               var12 -= 2;
 
                               do {
-                                 ++var9.prevMatchLen;
+                                 ++var9.windowPos;
                                  --var9.lookahead;
                                  if (var9.lookahead >= 3) {
                                     var9.findLongestMatch();
@@ -326,22 +325,22 @@ public final class Deflater {
                                  --var12;
                               } while(var12 > 0);
 
-                              ++var9.prevMatchLen;
+                              ++var9.windowPos;
                               --var9.lookahead;
                               var9.hasPrevLiteral = false;
-                              var9.prevMatchLen = 2;
+                              var9.matchLength = 2;
                            } else {
                               if (var9.hasPrevLiteral) {
-                                 var9.emitLiteral(var9.window[var9.prevMatchLen - 1] & 255);
+                                 var9.emitLiteral(var9.window[var9.windowPos - 1] & 255);
                               }
 
                               var9.hasPrevLiteral = true;
-                              ++var9.prevMatchLen;
+                              ++var9.windowPos;
                               --var9.lookahead;
                            }
 
                            if (var9.isBlockFull()) {
-                              var13 = var9.prevMatchLen - var9.matchLen;
+                              var13 = var9.windowPos - var9.matchLen;
                               if (var9.hasPrevLiteral) {
                                  --var13;
                               }
@@ -389,14 +388,14 @@ public final class Deflater {
    }
 
    private void updateHash() {
-      this.hashValue = this.window[this.prevMatchLen] << 5 ^ this.window[this.prevMatchLen + 1];
+      this.hashValue = this.window[this.windowPos] << 5 ^ this.window[this.windowPos + 1];
    }
 
    private int findLongestMatch() {
-      int var2 = (this.hashValue << 5 ^ this.window[this.prevMatchLen + 2]) & 32767;
+      int var2 = (this.hashValue << 5 ^ this.window[this.windowPos + 2]) & 32767;
       short var1;
-      this.hashPrev[this.prevMatchLen & 32767] = var1 = this.hashHead[var2];
-      this.hashHead[var2] = (short)this.prevMatchLen;
+      this.hashPrev[this.windowPos & 32767] = var1 = this.hashHead[var2];
+      this.hashHead[var2] = (short)this.windowPos;
       this.hashValue = var2;
       return var1 & '\uffff';
    }
@@ -404,7 +403,7 @@ public final class Deflater {
    private void slideWindow() {
       System.arraycopy(this.window, 32768, this.window, 0, 32768);
       this.matchStart -= 32768;
-      this.prevMatchLen -= 32768;
+      this.windowPos -= 32768;
       this.matchLen -= 32768;
 
       for(int var2 = 0; var2 < 32768; ++var2) {
@@ -420,10 +419,10 @@ public final class Deflater {
       int var2 = this.maxChainLength;
       int var3 = this.goodMatchLen;
       short[] var4 = this.hashPrev;
-      int var5 = this.prevMatchLen;
-      int var7 = this.prevMatchLen + this.prevMatchLen;
-      int var8 = Math.max(this.prevMatchLen, 2);
-      int var9 = Math.max(this.prevMatchLen - 32506, 0);
+      int var5 = this.windowPos;
+      int var7 = this.windowPos + this.matchLength;
+      int var8 = Math.max(this.matchLength, 2);
+      int var9 = Math.max(this.windowPos - 32506, 0);
       int var10 = var5 + 257;
       byte var11 = this.window[var7 - 1];
       byte var12 = this.window[var7];
@@ -487,19 +486,12 @@ public final class Deflater {
                ++var5;
                var10000 = this.window[var5];
                ++var6;
-               if (var10000 != this.window[var6]) {
-                  break;
-               }
-
-               ++var5;
-               var10000 = this.window[var5];
-               ++var6;
             } while(var10000 == this.window[var6] && var5 < var10);
 
             if (var5 > var7) {
                this.matchStart = var1;
                var7 = var5;
-               if ((var8 = var5 - this.prevMatchLen) >= var3) {
+               if ((var8 = var5 - this.windowPos) >= var3) {
                   break;
                }
 
@@ -507,7 +499,7 @@ public final class Deflater {
                var12 = this.window[var5];
             }
 
-            var5 = this.prevMatchLen;
+            var5 = this.windowPos;
          }
 
          if ((var1 = var4[var1 & 32767] & '\uffff') <= var9) {
@@ -517,8 +509,8 @@ public final class Deflater {
          --var2;
       } while(var2 != 0);
 
-      this.prevMatchLen = Math.min(var8, this.lookahead);
-      return this.prevMatchLen >= 3;
+      this.matchLength = Math.min(var8, this.lookahead);
+      return this.matchLength >= 3;
    }
 
    static short reverseBits(int var0) {

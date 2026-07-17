@@ -27,23 +27,23 @@ public final class HuffmanDecoder {
             nextCode[bits] = code;
             code += blCount[bits] << (16 - bits);
             if (bits >= 10) {
-                int start = nextCode[bits] & 0x20000;
-                int end = code & 0x20000;
+                int start = nextCode[bits] & 130944;
+                int end = code & 130944;
                 tableSize += (end - start) >> (16 - bits);
             }
         }
 
         if (code != 65536) {
-            throw new RuntimeException("Code lengths not properly.");
+            throw new RuntimeException("Code lengths not properly, code = " + code);
         }
 
         this.lookupTable = new short[tableSize];
         int subTableOffset = 512;
 
         for (int bits = 15; bits >= 10; bits--) {
-            int end = code & 0x20000;
+            int end = code & 130944;
             code -= blCount[bits] << (16 - bits);
-            int start = code & 0x20000;
+            int start = code & 130944;
 
             for (int idx = start; idx < end; idx += 128) {
                 this.lookupTable[Deflater.reverseBits(idx)] = (short) (-subTableOffset << 4 | bits);

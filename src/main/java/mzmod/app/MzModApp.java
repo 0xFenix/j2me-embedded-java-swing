@@ -114,7 +114,8 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
 
   private void handleFileSelect() {
     String var1;
-    if ((var1 = this.fileListChoice.getString(this.fileListChoice.getSelectedIndex())).endsWith("/")) {
+    if ((var1 = this.fileListChoice.getString(this.fileListChoice.getSelectedIndex()))
+        .endsWith("/")) {
       selectedPath = currentDirectory.concat(var1);
       this.operationType = 0;
       (new Thread(this)).start();
@@ -152,7 +153,9 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
         switch (var3) {
           case 1:
             if (!currentDirectory.equals("file:///")) {
-              for (var3 = this.fileListChoice.size() - 1; var3 > 0 && this.fileListChoice.getImage(var3) == this.fileIcon; --var3) {
+              for (var3 = this.fileListChoice.size() - 1;
+                  var3 > 0 && this.fileListChoice.getImage(var3) == this.fileIcon;
+                  --var3) {
                 var11 = currentDirectory + this.fileListChoice.getString(var3);
                 if (!jarCache.containsKey(var11)) {
                   this.listChoice.append(var11, (Image) null);
@@ -182,12 +185,17 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
             this.notifyDestroyed();
             return;
           case 8:
-            if ((var6 = (var11 = this.fileListChoice.getString(this.fileListChoice.getSelectedIndex())).toLowerCase())
+            if ((var6 =
+                        (var11 =
+                                this.fileListChoice.getString(
+                                    this.fileListChoice.getSelectedIndex()))
+                            .toLowerCase())
                     .endsWith(".zip")
                 || var6.endsWith(".jar")
                 || var6.endsWith("_jar")
                 || var6.endsWith("_zip")) {
-              this.listChoice.setSelectedIndex(this.listChoice.append(currentDirectory.concat(var11), (Image) null), true);
+              this.listChoice.setSelectedIndex(
+                  this.listChoice.append(currentDirectory.concat(var11), (Image) null), true);
               return;
             }
         }
@@ -321,8 +329,10 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
         try {
           this.zipReader = new ByteArrayReader(readFile(var5));
           Vector var7 = this.readZipEntries(this.zipReader);
-          (var6 = new JarInfo(var5, var7)).parseManifest(this.readZipEntryData((ZipEntryInfo) var7.elementAt(0)));
+          (var6 = new JarInfo(var5, var7))
+              .parseManifest(this.readZipEntryData((ZipEntryInfo) var7.elementAt(0)));
         } catch (Exception var9) {
+          var9.printStackTrace();
           this.progressForm.append(var5 + "\nRead Failure");
           continue;
         }
@@ -332,7 +342,8 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
 
       long var10 = System.currentTimeMillis();
       this.writeJarEntry(var6, var1, var2);
-      this.progressForm.append(var5 + "\n" + (System.currentTimeMillis() - var10) + loadString('k') + "\n");
+      this.progressForm.append(
+          var5 + "\n" + (System.currentTimeMillis() - var10) + loadString('k') + "\n");
     }
   }
 
@@ -369,7 +380,8 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
     for (var8 = 0; var8 < var4; ++var8) {
       String var22 = this.mergeIndex == 0 ? "" : (char) (97 + this.mergeIndex) + "/";
       ++this.mergeIndex;
-      this.progressForm.append(var10 = new Gauge(this.mergeIndex + ": " + var1.jarPath, false, var6, 0));
+      this.progressForm.append(
+          var10 = new Gauge(this.mergeIndex + ": " + var1.jarPath, false, var6, 0));
       var11 = this.progressForm.append(var21);
       display.setCurrent(this.progressForm);
       Hashtable var12 = ClassModifier.initLibraryMappings();
@@ -407,7 +419,8 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
 
       try {
         byte[] var23;
-        if ((var23 = StaticClassGenerator.generate(ClassModifier.MODIFIED_CLASSES, var15)) != null) {
+        if ((var23 = StaticClassGenerator.generate(ClassModifier.MODIFIED_CLASSES, var15))
+            != null) {
           var2.putNextEntry(var15 + ".class");
           var2.write(var23);
           var2.closeEntry();
@@ -439,7 +452,8 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
           var3.flush();
           if (var26.equals(var1.iconPath)) {
             ZipEntryInfo var28;
-            (var28 = new ZipEntryInfo(var1.tempIconName)).compressionMethod = var9.compressionMethod;
+            (var28 = new ZipEntryInfo(var1.tempIconName)).compressionMethod =
+                var9.compressionMethod;
             var28.versionNeeded = var9.versionNeeded;
             var28.compressedSize = var9.compressedSize;
             var28.uncompressedSize = var9.uncompressedSize;
@@ -730,6 +744,7 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
         }
       }
     } catch (Throwable var12) {
+      var12.printStackTrace();
       if (var3 != null) {
         var3.close();
       }
@@ -760,14 +775,15 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
               showStatus(jarPath + "Read failed: not a valid zip file");
               return;
             }
-
+            System.out.println("Read " + zipEntries.size() + " entries from " + jarPath);
             JarInfo jarInfo = new JarInfo(jarPath, zipEntries);
             jarCache.put(jarPath, jarInfo);
             this.showJarDetails(jarInfo);
             return;
           } catch (Exception var6) {
-            showStatus(jarPath + "Read Failed:" + var6.toString());
+            showStatus(jarPath + "\nRead Failed:\n" + var6.toString());
             var6.printStackTrace();
+            System.out.println(var6.toString());
             failedJars.put(jarPath, jarPath);
             return;
           }
@@ -819,6 +835,13 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
   }
 
   private byte[] readZipEntryData(ZipEntryInfo zipEntryInfo) {
+    // print log when zipEntryInfo null
+
+    if (zipEntryInfo == null) {
+      System.out.println("zipEntryInfo is null");
+      return null;
+    }
+
     this.zipReader.seek(zipEntryInfo.localHeaderOffset + 26);
 
     try {
@@ -827,7 +850,8 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
       this.zipReader.skip((long) (this.zipReader.readShort() + this.zipReader.readShort()));
       if (zipEntryInfo.compressionMethod == 8) {
         this.inflater.reset();
-        this.inflater.setInput(this.zipReader.buffer, this.zipReader.getPosition(), zipEntryInfo.compressedSize);
+        this.inflater.setInput(
+            this.zipReader.buffer, this.zipReader.getPosition(), zipEntryInfo.compressedSize);
         int var6 = 0;
 
         while (var3 - var6 > 0) {
@@ -843,6 +867,7 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
 
       return var2;
     } catch (Throwable var5) {
+      var5.printStackTrace();
       return null;
     }
   }
@@ -1042,7 +1067,9 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
 
       for (var1 = var7.length; var1 > 0; var1 -= 4) {
         int var6 = 3;
-        int var5 = (BASE64_DECODE_TABLE[var7[var3++] & 255] << 6 | BASE64_DECODE_TABLE[var7[var3++] & 255]) << 6;
+        int var5 =
+            (BASE64_DECODE_TABLE[var7[var3++] & 255] << 6 | BASE64_DECODE_TABLE[var7[var3++] & 255])
+                << 6;
         if (var7[var3] != 61) {
           var5 |= BASE64_DECODE_TABLE[var7[var3++] & 255];
         } else {
@@ -1158,6 +1185,7 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
       zipWriter.putNextEntry("MZMOD/mid.png");
       byte[] var3;
       if ((var3 = readFile(this.iconField.getString())) == null) {
+        System.out.println("Read icon failed: " + this.iconField.getString());
         this.progressForm.append(this.iconField.getString() + "Read Failure");
         zipWriter.write(this.readResource("/icon.png"));
       } else {
@@ -1177,7 +1205,10 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
         do {
           do {
             if (var5 >= var4) {
-              this.zipReader = new ByteArrayReader(this.readResource(this.enableScreenshots ? "/MZMODSSlib.jar" : "/MZMODlib.jar"));
+              this.zipReader =
+                  new ByteArrayReader(
+                      this.readResource(
+                          this.enableScreenshots ? "/MZMODSSlib.jar" : "/MZMODlib.jar"));
               var4 = (var10 = this.readZipEntries(this.zipReader)).size();
               var5 = 1;
 
@@ -1186,7 +1217,8 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
                   do {
                     do {
                       if (var5 >= var4) {
-                        if (this.enableScreenshots && (this.enableList || this.enableListMainPage)) {
+                        if (this.enableScreenshots
+                            && (this.enableList || this.enableListMainPage)) {
                           this.zipReader = new ByteArrayReader(this.readResource("/MZMODlib.jar"));
                           var4 = (var10 = this.readZipEntries(this.zipReader)).size();
                           var5 = 1;
@@ -1200,8 +1232,12 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
                               zipWriter.putNextEntry(var6);
                               zipWriter.closeCurrentEntry();
                               this.zipReader.seek(var8 + 26);
-                              this.zipReader.skip((long) (this.zipReader.readShort() + this.zipReader.readShort()));
-                              bufferedOutput.write(this.zipReader.buffer, this.zipReader.getPosition(), var6.compressedSize);
+                              this.zipReader.skip(
+                                  (long) (this.zipReader.readShort() + this.zipReader.readShort()));
+                              bufferedOutput.write(
+                                  this.zipReader.buffer,
+                                  this.zipReader.getPosition(),
+                                  var6.compressedSize);
                               bufferedOutput.flush();
                             }
                           }
@@ -1211,7 +1247,9 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
                       }
                     } while (!(var7 = (var6 = (ZipEntryInfo) var10.elementAt(var5++)).toString())
                         .endsWith(".class"));
-                  } while (!this.enableList && !this.enableListMainPage && var7.endsWith("List.class"));
+                  } while (!this.enableList
+                      && !this.enableListMainPage
+                      && var7.endsWith("List.class"));
 
                   if (this.enableListMainPage && var7.endsWith("MZMOD.class")) {
                     byte[] var12;
@@ -1225,8 +1263,10 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
                     zipWriter.putNextEntry(var6);
                     zipWriter.closeCurrentEntry();
                     this.zipReader.seek(var8 + 26);
-                    this.zipReader.skip((long) (this.zipReader.readShort() + this.zipReader.readShort()));
-                    bufferedOutput.write(this.zipReader.buffer, this.zipReader.getPosition(), var6.compressedSize);
+                    this.zipReader.skip(
+                        (long) (this.zipReader.readShort() + this.zipReader.readShort()));
+                    bufferedOutput.write(
+                        this.zipReader.buffer, this.zipReader.getPosition(), var6.compressedSize);
                     bufferedOutput.flush();
                   }
                 }
@@ -1242,10 +1282,12 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
         zipWriter.closeCurrentEntry();
         this.zipReader.seek(var8 + 26);
         this.zipReader.skip((long) (this.zipReader.readShort() + this.zipReader.readShort()));
-        bufferedOutput.write(this.zipReader.buffer, this.zipReader.getPosition(), var6.compressedSize);
+        bufferedOutput.write(
+            this.zipReader.buffer, this.zipReader.getPosition(), var6.compressedSize);
         bufferedOutput.flush();
       }
     } catch (Throwable var9) {
+      var9.printStackTrace();
     }
   }
 
@@ -1388,6 +1430,7 @@ public class MzModApp extends MIDlet implements Runnable, CommandListener {
   private void showJarDetails(JarInfo jarInfo) {
     this.currentJarInfo = jarInfo;
     if (jarInfo.displayNames == null) {
+      System.out.println("Parsing manifest for " + jarInfo.jarPath);
       jarInfo.parseManifest(this.readZipEntryData((ZipEntryInfo) jarInfo.entries.elementAt(0)));
       this.zipReader.close();
     }
