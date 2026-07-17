@@ -101,6 +101,10 @@ public class JarMerger {
         Files.createDirectories(parent);
       }
 
+      if(outputPath.toFile().exists()) {
+        Files.delete(outputPath);
+      }
+
       long startTime = System.currentTimeMillis();
 
       try (ZipOutputStream zos =
@@ -126,7 +130,11 @@ public class JarMerger {
           processJar(zos, jarFile, processor, i, collectedResources);
         }
 
-        // 4. Write Static registration class
+        // 4. Merge embedded.jar (library bundled as a resource) into the output jar.
+        // All of its classes/resources are added verbatim (no renaming / relocation).
+        mergeEmbeddedJar(zos, collectedResources);
+
+        // 5. Write Static registration class
         if (!BytecodeProcessor.MODIFIED_CLASSES.isEmpty()) {
           writeStaticClass(zos, BytecodeProcessor.MODIFIED_CLASSES);
         }
@@ -141,6 +149,41 @@ public class JarMerger {
     } catch (Exception e) {
       e.printStackTrace();
       notifyComplete(false, "Error: " + e.getMessage());
+    }
+  }
+
+  /**
+   * Merge all entries from the bundled {@code embedded.jar} resource into the output jar.
+   *
+   * <p>Entries are written verbatim (classes are not relocated). Resource entries that were already
+   * collected from the source jar are skipped to avoid duplicate entries.
+   */
+  private void mergeEmbeddedJar(ZipOutputStream zos, Map<String, byte[]> collectedResources)
+      throws IOException {
+    InputStream embedded = getClass().getResourceAsStream("/embedded.jar");
+    if (embedded == null) {
+      // No embedded library to merge
+      return;
+    }
+    notifyProgress(0, 1, "Merging embedded library: embedded.jar");
+    try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(embedded))) {
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        String name = entry.getName();
+        if (entry.isDirectory()) continue;
+        if (name.equalsIgnoreCase("META-INF/MANIFEST.MF")) continue;
+
+        byte[] data = readAllBytes(zis);
+        zis.closeEntry();
+
+        if (name.endsWith(".class")) {
+          writeEntry(zos, name, data);
+        } else {
+          if (collectedResources.putIfAbsent(name, data) == null) {
+            writeEntry(zos, name, data);
+          }
+        }
+      }
     }
   }
 
@@ -163,7 +206,6 @@ public class JarMerger {
 
         // Skip directories and the manifest (we write our own)
         if (entry.isDirectory()) continue;
-        if (name.equalsIgnoreCase("META-INF/MANIFEST.MF")) continue;
 
         if (name.endsWith(".class")) {
           // Process bytecode and rename
@@ -171,6 +213,8 @@ public class JarMerger {
           byte[] processed = processor.processClass(data, className);
           String newName = processor.getRenamedClass(className) + ".class";
           writeEntry(zos, newName, processed != null ? processed : data);
+        } else if (name.equalsIgnoreCase("META-INF/MANIFEST.MF") && collectedResources.putIfAbsent(name, data) == null) {
+          writeEntry(zos, "manifest.ini", data);
         } else {
           // Resource (images, data, etc.): keep at its original location, written
           // exactly once. The first copy wins; later copies are skipped to avoid
@@ -195,9 +239,12 @@ public class JarMerger {
     sb.append("MIDlet-Version: 2.5\r\n");
     sb.append("MIDlet-Vendor: ").append(vendorName).append("\r\n");
     sb.append("MIDlet-Name: ").append(programName).append("\r\n");
-
+    sb.append("MIDlet-1: ")
+        .append(programName)
+        .append(",/MZMOD/mid.png,MZMOD.MZMOD")
+        .append("\r\n");
     // Collect MIDlet entries from each copy of the source JAR's manifest
-    int midletNumber = 1;
+    int midletNumber = 0;
     Map<String, String> manifest = readManifest(sourceJar);
     for (int i = 0; i < totalJars; i++) {
       // Extract MIDlet-1 (the main entry)
@@ -209,10 +256,11 @@ public class JarMerger {
         String displayName = parts[0];
         String icon = (iconPath != null && !iconPath.isEmpty()) ? "/icon" : parts[1];
 
-        sb.append("MIDlet-").append(midletNumber++).append(": ");
-        sb.append(displayName).append(",");
+        sb.append(midletNumber++).append(": ");
+        sb.append(displayName).append("(").append(midletNumber + 1).append(")").append(",");
         sb.append(icon.isEmpty() ? "" : icon).append(",");
-        sb.append(className);
+        sb.append(className).append(",");
+        sb.append("/manifest.ini");
         sb.append("\r\n");
       }
     }
