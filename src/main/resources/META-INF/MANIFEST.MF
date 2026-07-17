@@ -1,0 +1,52 @@
+midtime: 5500
+midlevel: 80
+giftime: 3910
+gifcolor: 0
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.8.0
+Created-By: 1.6.0_13-b03 DV software (Sun Microsystems Inc.)
+MIDlet-1: Advance Menu,/DEVOICY/dv/dv/dv,mzmod.app.MzModApp
+MIDlet-Vendor: TranDucHuy
+f: RXhpdA==
+icon: file:///c/multi/icon.png
+d: T3Blbg==
+e: QmFjaw==
+b: iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABWElEQVR42qSSu0rEQBS
+ G/4lB1rUwbzBYe2MLGx9ARRTFW2thJVjYWNoJFtr5AJY+g4KPICJrIQgS62V3c1lJshv3
+ OMlkQ2Z3IqIHBs5k5vvPf06G2TfTKAka2jPdJbMMnlrYgFXbF2kE5+kW7vMD6USMsvLW/
+ DLg24Bnw5pZKrumFSC+dwn0PoHQE8sFuj745qGurZIWWE9Ub6N+dZFu504OgAnjVw6I75
+ 5LAQoLX0XOIvD1tREXpr56C+gHBQGR+0KkYvzogPjOmRDoSpgC1UE/TMX56qLiQpVMYK8
+ h4ayFsXFTwhRJZ8aXimQPifj2qThM7DckPBAZwCTEIc4nK0Ac4+PuJeULM0gqNBW4fn0v
+ /8JRTcIUA50OUK0qMyC+dZxOeaRyHhmcUwb4ymzqXDoI2lrbSuViJC6KQ3TeHst7Hoazc
+ OxW/g6Y+/5KYuEPwRgR4T/xLcAAcgGzK7lP0fEAAAAASUVORK5CYII=
+c: U2VsZWN0IEZpbGU=
+set: Set
+savedir: file:///c/multi/result_jar
+MIDlet-Description: MZadvanve menu/v3.6.6/110922/mzmod. this applicati
+ on is published by MZmod Team (MultiMidlet and Multimedia Features) ,
+  Original Software by MZMOD , reModifications by Devoicy HxM (http://
+ devoicy.mywapblog.com)
+MIDlet-Name: Advance Menu
+a: iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAaVBMVEX//////5zGmhj
+ ///+lcgz/64T/85yceRj/54T/43vw5Hn/14T/12v91W//x1riwU/av2vnvlLvukL//6W/
+ mSjAlhj/+/f7+Zb/95TOoiHPoiXJoCD/84z38InOvFudehnXuD/is0LeskJgRnPAAAAAA
+ XRSTlMAQObYZgAAAGVJREFUeF6NzMUSAjEURNEnybgrbv//kaRDhhRVLObs+i6a/jg6P1
+ sdiVuUHRXPh+QCCnJHsK1ExoVSOtVFIVOEWq4cNCvC8zwegv6GcHqwDQaDUyk4D16fwNV
+ mQqA5SslLv2iXNzT1Bkn/ZlYxAAAAAElFTkSuQmCC
+n: KENoZW4p
+o: VmlldyBSZXN1bHRz
+selectall: Select All
+j: CuaWh+S7tg==
+add: Add to list
+k: RmluaXNoZWQh
+h: U3VjY2Vzcw==
+MIDlet-Version: 3.6.6
+i: RmFpbHVyZQ==
+start: Start
+delete: Delete
+view: List
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0
+MIDlet-Delete-Confirm: Do you really want to kill me? :) okay, visit h
+ ttp://devoicy.mywapblog.com/ for more java apps.
+
