@@ -22,7 +22,7 @@ public class JarMerger {
   public String displayName = "Merged App";
   public String vendorName = "MZMOD";
   public String iconPath = ""; // path to custom icon file
-  public String savePath = "merged.jar";
+  public String savePath = "Embedded.jar";
   // Feature toggles (mirror original J2ME options)
   public boolean enableScreenshots = false;
   public boolean enableList = false;
@@ -257,7 +257,7 @@ public class JarMerger {
         String icon = (iconPath != null && !iconPath.isEmpty()) ? "/icon" : parts[1];
 
         sb.append(midletNumber++).append(": ");
-        sb.append(displayName).append("(").append(midletNumber + 1).append(")").append(",");
+        sb.append(displayName).append("(").append(midletNumber).append(")").append(",");
         sb.append(icon.isEmpty() ? "" : icon).append(",");
         sb.append(className).append(",");
         sb.append("/manifest.ini");
