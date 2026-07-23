@@ -4,7 +4,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
-import java.util.jar.*;
 import java.util.zip.*;
 import org.objectweb.asm.*;
 
