@@ -172,6 +172,15 @@ public class BytecodeProcessor {
         String origDesc = mi.desc;
         mi.name = remapMethodName(origOwner, mi.name, origDesc);
         mi.owner = remapClassName(origOwner);
+
+        // Redirect RMS method calls -> lib/RecordStore
+        if ("javax/microedition/rms/RecordStore".equals(origOwner)) {
+          if (mi.name.contains("penRecordStore")
+              || mi.name.contains("istRecordStores")
+              || mi.name.contains("eleteRecordStore")) {
+            mi.owner = "lib/RecordStore";
+          }
+        }
         mi.desc = remapDescriptor(origDesc);
       } else if (ain instanceof InvokeDynamicInsnNode) {
         InvokeDynamicInsnNode ind = (InvokeDynamicInsnNode) ain;
